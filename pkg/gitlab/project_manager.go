@@ -6,8 +6,8 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 
-	"github.com/Scalify/gitlab-project-settings-state-enforcer/pkg/config"
-	"github.com/Scalify/gitlab-project-settings-state-enforcer/pkg/internal/stringslice"
+	"github.com/erinkerNCS/gitlab-settings-enforcer/pkg/config"
+	"github.com/erinkerNCS/gitlab-settings-enforcer/pkg/internal/stringslice"
 
 	"github.com/sirupsen/logrus"
 )

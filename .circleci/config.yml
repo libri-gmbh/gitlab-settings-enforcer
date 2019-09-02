@@ -3,7 +3,7 @@ jobs:
   test:
     docker:
       - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/Scalify/gitlab-project-settings-state-enforcer
+    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
 
     steps:
       - checkout
@@ -30,7 +30,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/Scalify/gitlab-project-settings-state-enforcer
+    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
 
     steps:
       - checkout

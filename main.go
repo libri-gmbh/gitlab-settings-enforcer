@@ -1,6 +1,7 @@
 // MIT License
 //
 // Copyright (c) 2019 Scalify GmbH
+// Copyright (c) 2019 Eric Rinker
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@
 
 package main
 
-import "github.com/Scalify/gitlab-project-settings-state-enforcer/cmd"
+import "github.com/erinkerNCS/gitlab-settings-enforcer/cmd"
 
 func main() {
 	cmd.Execute()
