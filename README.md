@@ -1,9 +1,11 @@
 # gitlab-project-settings-state-enforcer
-> Enforces the settings of a bunch of gitlab repos by reading a config file and talking to the GitLab API.
+
+Enforces the settings of GitLab repositories by reading config files and talking
+to the GitLab API.
 
 # Usage
 
-This project get's built automatically and is usable as a docker image at hub.docker.com: [`scalify/gitlab-project-settings-state-enforcer`](https://hub.docker.com/r/scalify/gitlab-project-settings-state-enforcer)
+T.B.D.
 
 # Configuration
 

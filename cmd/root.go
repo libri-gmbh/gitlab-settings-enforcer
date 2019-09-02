@@ -8,7 +8,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/cobra"
 
-	"github.com/Scalify/gitlab-project-settings-state-enforcer/pkg/config"
+	"github.com/erinkerNCS/gitlab-settings-enforcer/pkg/config"
 )
 
 type envCfg struct {

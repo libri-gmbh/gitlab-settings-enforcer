@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/xanzy/go-gitlab"
 
-	gl "github.com/Scalify/gitlab-project-settings-state-enforcer/pkg/gitlab"
+	gl "github.com/erinkerNCS/gitlab-settings-enforcer/pkg/gitlab"
 )
 
 // syncCmd represents the sync command
