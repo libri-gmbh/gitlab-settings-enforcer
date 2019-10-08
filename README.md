@@ -1,7 +1,7 @@
-# gitlab-project-settings-state-enforcer
+# GitLab Settings Enforcer
 
-Enforces the settings of GitLab repositories by reading config files and talking
-to the GitLab API.
+Enforces GitLab project settings by reading a config file and talking to
+the GitLab API(s).
 
 # Usage
 
@@ -9,40 +9,44 @@ T.B.D.
 
 # Configuration
 
-Configuration of project interaction is currently possible via JSON files providing a Config object. The config object has the following fields:
+Configuration of project interaction is currently possible via JSON files
+providing a Config object. The config object has the following fields:
 
 
-| field                   | type              | required | content                                                                                                          | default |
+| Field                   | Type              | Required | Content                                                                                                          | Default |
 |-------------------------|-------------------|----------|------------------------------------------------------------------------------------------------------------------|---------|
-| `group_name`            | string            | yes      | The path of the root group (e.g. `example` or `some/nested/example`)                                             |         |
-| `project_blacklist`     | []string          | no       | A list of projects to blacklist (cannot be set when project_whitelist is used)                                   | []      |
-| `project_whitelist`     | []string          | no       | A list of projects to whitelist (cannot be set when project_blacklist is used)                                   | []      |
-| `create_default_branch` | bool              | no       | Whether the default branch configured in `settings.default_branch` should be created if it doesn't exist already |         |
+| `group_name`            | string            | yes      | The path of the root group<BR>(e.g. `example` or `some/nested/example`)                                          |         |
+| `project_blacklist`     | []string          | no       | A list of projects to blacklist<BR>(cannot be set when project_whitelist is used)                                | []      |
+| `project_whitelist`     | []string          | no       | A list of projects to whitelist<BR>(cannot be set when project_blacklist is used)                                | []      |
+| `create_default_branch` | bool              | no       | Whether the default branch configured in `project_settings.default_branch` should be created if it doesn't exist |         |
 | `protected_branches`    | []ProtectedBranch | no       | A list of branches to protect, together with the infos which roles are allowed to merge or push.                 |         |
-| settings                | Object            | yes      | the gitlab settings to change. Possible keys: https://docs.gitlab.com/ce/api/projects.html#edit-project          |         |
+| `approval_settings`     | Object            | no       | The gitlab project approval settings to change. [Possible keys](https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration) |         |
+| `project_settings`      | Object            | yes      | The gitlab project settings to change. [Possible keys](https://docs.gitlab.com/ce/api/projects.html#edit-project) |         |
 
 
 `ProtectedBranch` 
 
-| field                | type   | required | content                                                                              |
+| Field                | Type   | Required | Content                                                                              |
 |----------------------|--------|----------|--------------------------------------------------------------------------------------|
-| `name`               | string | yes      | he name of the branch to protect                                                     |
+| `name`               | string | yes      | The name of the branch to protect                                                    |
 | `push_access_level`  | string | yes      | Which role is allowed to push (possible values: `maintainer`, `developer`, `noone`)  |
 | `merge_access_level` | string | yes      | Which role is allowed to merge (possible values: `maintainer`, `developer`, `noone`) |
 
 
 ## Env vars
 
-To control the GitLab API endpoint and the authentication as well as further internal flags please use the following env vars:
+To control the GitLab API endpoint and the authentication as well as further
+internal flags please use the following env vars:
 
 | Name              | Required | Description                                                                       | Default      |
 |-------------------|----------|-----------------------------------------------------------------------------------|--------------|
-| `VERBOSE`         | no       | Enables debug logging when enabled                                                | `false`      |
-| `GITLAB_TOKEN`    | yes      | The GitLab API token used for authentication                                      |              |
 | `GITLAB_ENDPOINT` | no       | Only override when using GitLab on premise, set this to your GitLab Server Domain | (gitlab.com) |
+| `GITLAB_TOKEN`    | yes      | The GitLab API token used for authentication                                      |              |
+| `VERBOSE`         | no       | Enables debug logging when enabled                                                | `false`      |
 
 
 ## Config Example
+
 An example config might look like the following:
 
 ```json
@@ -54,10 +58,16 @@ An example config might look like the following:
   "project_whitelist": [],
   "create_default_branch": true,
   "protected_branches": [
-    {"name":  "develop", "push_access_level":  "maintainer", "merge_access_level":  "developer"},
-    {"name":  "master", "push_access_level":  "maintainer", "merge_access_level":  "developer"}
+    { "name": "develop", "push_access_level": "maintainer", "merge_access_level": "developer"},
+    { "name": "master", "push_access_level": "maintainer", "merge_access_level": "developer"}
   ],
-  "settings": {
+  "approval_settings": {
+    "disable_overriding_approvers_per_merge_request": false,
+    "merge_requests_author_approval": false,
+    "merge_requests_disable_committers_approval": true,
+    "reset_approvals_on_push": true
+  },
+  "project_settings": {
     "default_branch": "develop",
     "issues_enabled": true,
     "merge_requests_enabled": true,
@@ -81,9 +91,9 @@ An example config might look like the following:
 }
 ```
 
-
 # License
 
     MIT License
     
     Copyright (c) 2019 Scalify GmbH
+    Copyright (c) 2019 Eric Rinker

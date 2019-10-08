@@ -1,2 +1,11 @@
 vendor
 config.json
+
+# JetBrains Tools
+# --------------------------
+.idea
+
+# UNIX
+# --------------------------
+*.sw?
+

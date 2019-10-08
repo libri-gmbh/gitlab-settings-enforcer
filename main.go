@@ -26,5 +26,5 @@ package main
 import "github.com/erinkerNCS/gitlab-settings-enforcer/cmd"
 
 func main() {
-	cmd.Execute()
+  cmd.Execute()
 }
