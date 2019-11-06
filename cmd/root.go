@@ -12,9 +12,10 @@ import (
 )
 
 type envCfg struct {
+  ConfigFile     string `split_words:"true" default:"./config.json"`
+  Dryrun         bool
   GitlabEndpoint string `split_words:"true"`
   GitlabToken    string `split_words:"true" required:"true"`
-  ConfigFile     string `split_words:"true" default:"./config.json"`
   Verbose        bool
 }
 

@@ -14,7 +14,9 @@ type Project struct {
 }
 
 type groupsClient interface {
+  GetGroup(gid interface{}, options ...gitlab.OptionFunc) (*gitlab.Group, *gitlab.Response, error)
   ListGroupProjects(gid interface{}, opt *gitlab.ListGroupProjectsOptions, options ...gitlab.OptionFunc) ([]*gitlab.Project, *gitlab.Response, error)
+  ListSubgroups(gid interface{}, opt *gitlab.ListSubgroupsOptions, options ...gitlab.OptionFunc) ([]*gitlab.Group, *gitlab.Response, error)
 }
 
 type projectsClient interface {
@@ -35,6 +37,12 @@ type branchesClient interface {
 
 var (
   listGroupProjectOps = &gitlab.ListGroupProjectsOptions{
+    ListOptions: gitlab.ListOptions{
+      PerPage: 100,
+    },
+  }
+
+  listSubgroupOps = &gitlab.ListSubgroupsOptions{
     ListOptions: gitlab.ListOptions{
       PerPage: 100,
     },

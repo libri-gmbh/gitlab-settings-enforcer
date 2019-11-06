@@ -18,6 +18,9 @@ var syncCmd = &cobra.Command{
         logger.Fatal(err)
       }
     }
+    if env.Dryrun {
+      logger.Infof("DRYRUN: No changes will be implemented.")
+    }
 
     manager := gl.NewProjectManager(
       logger.WithField("module", "project_manager"),
@@ -38,17 +41,17 @@ var syncCmd = &cobra.Command{
       logger.Infof("Updating project #%d: %s", index + 1, project.FullPath)
 
       // Update branches of current project
-      if err := manager.EnsureBranchesAndProtection(project); err != nil {
+      if err := manager.EnsureBranchesAndProtection(project, env.Dryrun); err != nil {
         logger.Errorf("failed to ensure branches of repo %v: %v", project.FullPath, err)
       }
 
       // Update general settings of current project
-      if err := manager.UpdateProjectSettings(project); err != nil {
+      if err := manager.UpdateProjectSettings(project, env.Dryrun); err != nil {
         logger.Errorf("failed to update project settings of repo %v: %v", project.FullPath, err)
       }
 
       // Update approval settings of current project
-      if err := manager.UpdateProjectApprovalSettings(project); err != nil {
+      if err := manager.UpdateProjectApprovalSettings(project, env.Dryrun); err != nil {
         logger.Errorf("failed to update approval settings of repo %v: %v", project.FullPath, err)
       }
     }
