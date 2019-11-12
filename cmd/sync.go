@@ -40,20 +40,27 @@ var syncCmd = &cobra.Command{
     for index, project := range projects {
       logger.Infof("Updating project #%d: %s", index + 1, project.FullPath)
 
-      // Update branches of current project
+      // Update branches
       if err := manager.EnsureBranchesAndProtection(project, env.Dryrun); err != nil {
         logger.Errorf("failed to ensure branches of repo %v: %v", project.FullPath, err)
+        manager.SetError(true)
       }
 
-      // Update general settings of current project
+      // Update general settings
       if err := manager.UpdateProjectSettings(project, env.Dryrun); err != nil {
         logger.Errorf("failed to update project settings of repo %v: %v", project.FullPath, err)
+        manager.SetError(true)
       }
 
-      // Update approval settings of current project
+      // Update approval settings
       if err := manager.UpdateProjectApprovalSettings(project, env.Dryrun); err != nil {
         logger.Errorf("failed to update approval settings of repo %v: %v", project.FullPath, err)
+        manager.SetError(true)
       }
+    }
+
+    if manager.GetError() {
+      logger.Fatal("Error(s) encountered.")
     }
   },
 }

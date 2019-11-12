@@ -23,9 +23,11 @@ var (
 type Config struct {
   GroupName           string                                            `json:"group_name"`
   CreateDefaultBranch bool                                              `json:"create_default_branch"`
+  Error               bool
   ProjectBlacklist    []string                                          `json:"project_blacklist"`
   ProjectWhitelist    []string                                          `json:"project_whitelist"`
   ProtectedBranches   []ProtectedBranch                                 `json:"protected_branches"`
+
   ApprovalSettings    *gitlab.ChangeApprovalConfigurationOptions        `json:"approval_settings"`
   ProjectSettings     *gitlab.EditProjectOptions                        `json:"project_settings"`
 }

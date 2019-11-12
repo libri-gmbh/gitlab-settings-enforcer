@@ -226,6 +226,10 @@ func (m *ProjectManager) ensureDefaultBranch(project Project, dryrun bool) error
 func (m *ProjectManager) UpdateProjectSettings(project Project, dryrun bool) error {
   m.logger.Debugf("Updating settings of project %s ...", project.FullPath)
 
+  if m.config.ProjectSettings == nil {
+    return fmt.Errorf("No project_settings section provided in config")
+  }
+
   m.logger.Debugf("---[ HTTP Payload ]---\n")
   m.logger.Debugf("%+v\n", m.config.ProjectSettings)
 
@@ -244,7 +248,7 @@ func (m *ProjectManager) UpdateProjectSettings(project Project, dryrun bool) err
   m.logger.Debugf("%v\n", returned_project)
 
   if err != nil {
-    return fmt.Errorf("failed to update settings or project %s: %v", project.FullPath, err)
+    return fmt.Errorf("failed to update settings of project %s: %v", project.FullPath, err)
   }
 
   m.logger.Debugf("Updating settings of project %s done.", project.FullPath)
@@ -255,6 +259,10 @@ func (m *ProjectManager) UpdateProjectSettings(project Project, dryrun bool) err
 // UpdateProjectMergeRequestSettings updates the project settings on gitlab
 func (m *ProjectManager) UpdateProjectApprovalSettings(project Project, dryrun bool) error {
   m.logger.Debugf("Updating merge request approval settings of project %s [%d]...", project.FullPath, project.ID)
+
+  if m.config.ApprovalSettings == nil {
+    return fmt.Errorf("No approval_settings section provided in config")
+  }
 
   m.logger.Debugf("---[ HTTP Payload ]---\n")
   m.logger.Debugf("%+v\n", m.config.ApprovalSettings)
@@ -280,4 +288,15 @@ func (m *ProjectManager) UpdateProjectApprovalSettings(project Project, dryrun b
   m.logger.Debugf("Updating merge request approval settings of project %s done.", project.FullPath)
 
   return nil
+}
+
+// GetError returns the Error status
+func (m *ProjectManager) GetError() (bool) {
+  return m.config.Error
+}
+
+// SetError returns the Error status
+func (m *ProjectManager) SetError(state bool) (bool) {
+  m.config.Error = state
+  return m.config.Error
 }
