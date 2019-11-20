@@ -27,8 +27,8 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-  Use:   "gitlab-project-state-enforcer",
-  Short: "Enforces the settings of a bunch of GitLab repos",
+  Use:   "gitlab-setting-enforcer",
+  Short: "Enforces the settings of configured GitLab repos",
   PersistentPreRun: func(cmd *cobra.Command, args []string) {
     err := envconfig.Process("", env)
     if err != nil {

@@ -6,11 +6,10 @@ import (
   gitlab "github.com/xanzy/go-gitlab"
 )
 
-// Project holds all relevant infos for a GitLab repo
-type Project struct {
-  ID       int
-  Name     string
-  FullPath string
+// currentState stores current Project state for each project interacted with
+type ProjectSettings struct {
+  Approval gitlab.ProjectApprovals `json:"approval_settings,omitempty"`
+  General  gitlab.Project          `json:"project_settings,omitempty"`
 }
 
 type groupsClient interface {
@@ -21,6 +20,8 @@ type groupsClient interface {
 
 type projectsClient interface {
   ChangeApprovalConfiguration(pid interface{}, opt *gitlab.ChangeApprovalConfigurationOptions, options ...gitlab.OptionFunc) (*gitlab.ProjectApprovals, *gitlab.Response, error)
+  GetApprovalConfiguration(pid interface{}, options ...gitlab.OptionFunc) (*gitlab.ProjectApprovals, *gitlab.Response, error)
+  GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error)
   EditProject(pid interface{}, opt *gitlab.EditProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error)
 }
 
