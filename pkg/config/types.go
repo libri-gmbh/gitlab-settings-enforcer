@@ -30,6 +30,21 @@ type Config struct {
 
   ApprovalSettings    *gitlab.ChangeApprovalConfigurationOptions        `json:"approval_settings"`
   ProjectSettings     *gitlab.EditProjectOptions                        `json:"project_settings"`
+  Compliance          *ComplianceSettings                               `json:"compliance"`
+}
+
+// ComplianceSettings defines what is displayed and mandatory settings.
+type ComplianceSettings struct {
+  Email     EmailConfig                       `json:"email"`
+  Mandatory map[string]map[string]interface{} `json:"mandatory"`
+}
+
+// EmailConfig
+type EmailConfig struct {
+  From      string
+  Port      int
+  Server    string
+  To        []string
 }
 
 // ProtectedBranch defines who can act on a protected branch

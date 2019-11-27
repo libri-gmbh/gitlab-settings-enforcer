@@ -5,6 +5,8 @@ import (
   "fmt"
   "net/http"
   "net/url"
+  "net/smtp"
+  "reflect"
   "regexp"
   "sort"
   "strconv"
@@ -60,6 +62,19 @@ func NewProjectManager(
  * Exported Functions *
  **********************/
 
+// ComplianceReady determines if a compliance configuration is present
+func (m *ProjectManager) ComplianceReady() bool {
+  m.logger.Debugf("---[ Config ]---")
+  m.logger.Debugf("%+v", m.config)
+
+  if m.config.Compliance == nil {
+    m.logger.Debugf("Compliance field of Config not configured.")
+    return false
+  }
+
+  return true
+}
+
 // EnsureBranchesAndProtection ensures that
 //  1) the default branch exists
 //  2) all of the protected branches are configured correctly
@@ -104,84 +119,70 @@ func (m *ProjectManager) GetError() (bool) {
 func (m *ProjectManager) GenerateChangeLogReport() error {
   m.logger.Debugf("Generate Change Log Report")
 
-  m.logger.Debugf("---[ ORIGINAL APPROVAL SETTINGS ]---")
-  if err := m.debugPrintApprovalSettings(m.ApprovalSettingsOriginal); err != nil {
-    m.logger.Debugf("Error printing Original Approval Settings")
-  }
-  m.logger.Debugf("---[ UPDATED APPROVAL SETTINGS ]---")
-  if err := m.debugPrintApprovalSettings(m.ApprovalSettingsUpdated); err != nil {
-    m.logger.Debugf("Error printing Updated Approval Settings")
-  }
-  m.logger.Debugf("---[ ORIGINAL PROJECT SETTINGS ]---")
-  if err := m.debugPrintProjectSettings(m.ProjectSettingsOriginal); err != nil {
-    m.logger.Debugf("Error printing Original Project Settings")
-  }
-  m.logger.Debugf("---[ UPDATED PROJECT SETTINGS ]---")
-  if err := m.debugPrintProjectSettings(m.ProjectSettingsUpdated); err != nil {
-    m.logger.Debugf("Error printing Updated Project Settings")
+  if err := m.debugPrintAllSettings(); err != nil {
+    panic(err)
   }
 
-  // Convert from per-change to per-path orginzation
-  if len(m.ApprovalSettingsUpdated) != 0 || len(m.ProjectSettingsUpdated) != 0 {
-    // Get differences
-    approvalDifflog, err := diff.Diff(m.ApprovalSettingsOriginal, m.ApprovalSettingsUpdated)
-    if err != nil {
-      panic(err)
+  // Get differences
+  approvalDifflog, err := diff.Diff(m.ApprovalSettingsOriginal, m.ApprovalSettingsUpdated)
+  if err != nil {
+    panic(err)
+  }
+  projectDifflog, err := diff.Diff(m.ProjectSettingsOriginal, m.ProjectSettingsUpdated)
+  if err != nil {
+    panic(err)
+  }
+
+  m.logger.Debugf("---[ Approval Diff Log ]---")
+  m.logger.Debugf("%+v\n", approvalDifflog)
+  m.logger.Debugf("---[ Project Diff Log ]---")
+  m.logger.Debugf("%+v\n", projectDifflog)
+
+  changelog := make(map[string]map[string]map[string]map[string]interface{})
+
+  // Process Approvals
+  m.logger.Debugf("Process Approval Diff Log")
+  for _, v := range approvalDifflog {
+    // If REPO doesn't exist in map, make it.
+    if _, ok := changelog[v.Path[0]]; ! ok {
+      changelog[v.Path[0]] = make(map[string]map[string]map[string]interface{})
     }
-    projectDifflog, err := diff.Diff(m.ProjectSettingsOriginal, m.ProjectSettingsUpdated)
-    if err != nil {
-      panic(err)
-    }
-
-    m.logger.Debugf("---[ Approval Diff Log ]---")
-    m.logger.Debugf("%+v\n", approvalDifflog)
-    m.logger.Debugf("---[ Project Diff Log ]---")
-    m.logger.Debugf("%+v\n", projectDifflog)
-
-    changelog := make(map[string]map[string]map[string]map[string]interface{})
-
-    // Process Approvals
-    m.logger.Debugf("Process Approval Diff Log")
-    for _, v := range approvalDifflog {
-      // If REPO doesn't exist in map, make it.
-      if _, ok := changelog[v.Path[0]]; ! ok {
-        changelog[v.Path[0]] = make(map[string]map[string]map[string]interface{})
-      }
-      if _, ok := changelog[v.Path[0]]["approval_settings"]; ! ok {
-        changelog[v.Path[0]]["approval_settings"] = make(map[string]map[string]interface{})
-      }
-
-      setting_name := strcase.ToSnake(v.Path[len(v.Path)-1])
-      changelog[v.Path[0]]["approval_settings"][setting_name] = make(map[string]interface{})
-      changelog[v.Path[0]]["approval_settings"][setting_name]["From"] = v.From
-      changelog[v.Path[0]]["approval_settings"][setting_name]["To"] = v.To
+    if _, ok := changelog[v.Path[0]]["approval_settings"]; ! ok {
+      changelog[v.Path[0]]["approval_settings"] = make(map[string]map[string]interface{})
     }
 
-    // Process Projects
-    m.logger.Debugf("Process Project Diff Log")
-    for _, v := range projectDifflog {
-      // If REPO doesn't exist in map, make it.
-      if _, ok := changelog[v.Path[0]]; ! ok {
-        changelog[v.Path[0]] = make(map[string]map[string]map[string]interface{})
-      }
-      if _, ok := changelog[v.Path[0]]["project_settings"]; ! ok {
-        changelog[v.Path[0]]["project_settings"] = make(map[string]map[string]interface{})
-      }
+    setting_name := strcase.ToSnake(v.Path[len(v.Path)-1])
+    changelog[v.Path[0]]["approval_settings"][setting_name] = make(map[string]interface{})
+    changelog[v.Path[0]]["approval_settings"][setting_name]["From"] = v.From
+    changelog[v.Path[0]]["approval_settings"][setting_name]["To"] = v.To
+  }
 
-      setting_name := strcase.ToSnake(v.Path[len(v.Path)-1])
-      changelog[v.Path[0]]["project_settings"][setting_name] = make(map[string]interface{})
-      changelog[v.Path[0]]["project_settings"][setting_name]["From"] = v.From
-      changelog[v.Path[0]]["project_settings"][setting_name]["To"] = v.To
+  // Process Projects
+  m.logger.Debugf("Process Project Diff Log")
+  for _, v := range projectDifflog {
+    // If REPO doesn't exist in map, make it.
+    if _, ok := changelog[v.Path[0]]; ! ok {
+      changelog[v.Path[0]] = make(map[string]map[string]map[string]interface{})
+    }
+    if _, ok := changelog[v.Path[0]]["project_settings"]; ! ok {
+      changelog[v.Path[0]]["project_settings"] = make(map[string]map[string]interface{})
     }
 
-    // Output Raw JSON
-    body, err := json.MarshalIndent(changelog, "", "  ")
-    if err != nil {
-      panic(err)
-    }
-    m.logger.Debugf("---[ Change Log (JSON) ]---")
-    m.logger.Debugf("%s\n", string(body))
+    setting_name := strcase.ToSnake(v.Path[len(v.Path)-1])
+    changelog[v.Path[0]]["project_settings"][setting_name] = make(map[string]interface{})
+    changelog[v.Path[0]]["project_settings"][setting_name]["From"] = v.From
+    changelog[v.Path[0]]["project_settings"][setting_name]["To"] = v.To
+  }
 
+  // Output Raw JSON
+  body, err := json.MarshalIndent(changelog, "", "  ")
+  if err != nil {
+    panic(err)
+  }
+  m.logger.Debugf("---[ Change Log (JSON) ]---")
+  m.logger.Debugf("%s\n", string(body))
+
+  if len(changelog) != 0 {
     // Get longest length of setting name
     var longest_setting_name int
     var project_names []string
@@ -199,39 +200,228 @@ func (m *ProjectManager) GenerateChangeLogReport() error {
     }
     sort.Strings(project_names)
 
-    if len(changelog) != 0 {
-      // Output Formated Report
-      fmt.Printf("\nCHANGE LOG\n")
+    // Output Formated Report
+    fmt.Printf("\nCHANGE LOG\n")
 
-      for _, name := range project_names {
-        fmt.Printf("  %s\n", name)
+    for _, name := range project_names {
+      fmt.Printf("  %s\n", name)
 
-        var subsections []string
-        for subsection := range changelog[name] {
-          subsections = append(subsections, subsection)
+      var subsections []string
+      for subsection := range changelog[name] {
+        subsections = append(subsections, subsection)
+      }
+      sort.Strings(subsections)
+
+      for _, subsection := range subsections {
+        var settings []string
+        for setting := range changelog[name][subsection] {
+          settings = append(settings, setting)
         }
-        sort.Strings(subsections)
+        sort.Strings(settings)
 
-        for _, subsection := range subsections {
-          var settings []string
-          for setting := range changelog[name][subsection] {
-            settings = append(settings, setting)
-          }
-          sort.Strings(settings)
+        for _, setting := range settings {
+          fmt.Printf("    %-*s", longest_setting_name+2, setting+":")
+          fmt.Printf("\"%v\" => \"%v\"\n", changelog[name][subsection][setting]["From"], changelog[name][subsection][setting]["To"])
+        }
+      }
 
-          for _, setting := range settings {
-            fmt.Printf("    %-*s", longest_setting_name+2, setting+":")
-            fmt.Printf("\"%v\" => \"%v\"\n", changelog[name][subsection][setting]["From"], changelog[name][subsection][setting]["To"])
+      fmt.Printf("\n")
+    }
+  } else {
+    fmt.Printf("\nNo changes discovered.\n")
+  }
+
+  return nil
+}
+
+// GenerateComplianceEmail emails the compliance state of mandatory settings
+func (m *ProjectManager) GenerateComplianceEmail() error {
+  if err := m.debugPrintAllSettings(); err != nil {
+    panic(err)
+  }
+
+  m.logger.Debugf("---[ Compliance Settings ]---")
+  m.logger.Debugf("%v\n", m.config.Compliance)
+
+  // Create sorted list of projects
+  var project_names []string
+  for project_name := range m.ProjectSettingsOriginal {
+    // Add to list of project names to allow sorting
+    project_names = append(project_names, project_name)
+
+  }
+  sort.Strings(project_names)
+
+  // Create sorted list of subsections
+  var subsections []string
+  for subsection := range m.config.Compliance.Mandatory {
+    subsections = append(subsections, subsection)
+  }
+  sort.Strings(subsections)
+
+  // Create sorted list of settings, per subsection
+  var longest_setting_name int
+  var settings = make(map[string][]string)
+  for _, subsection := range subsections {
+    settings[subsection] = make([]string, 0)
+
+    for setting := range m.config.Compliance.Mandatory[subsection] {
+      settings[subsection] = append(settings[subsection], setting)
+      if len(setting) > longest_setting_name {
+        longest_setting_name = len(setting)
+      }
+    }
+    sort.Strings(settings[subsection])
+  }
+
+  // Print Title
+  email_body := fmt.Sprintf("\r\n<h2>Compliance Report</h2>\r\n")
+  email_body += fmt.Sprintf("<table>\r\n")
+
+  // Loop through projects
+  for _, name := range project_names {
+    email_body += fmt.Sprintf(" <tr>\r\n")
+    email_body += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:20px\"><b>%s</b></td>\r\n", name)
+    email_body += fmt.Sprintf(" </tr>\r\n")
+
+    // Loop through subsections
+    for _, subsection := range subsections {
+      email_body += fmt.Sprintf(" <tr>\r\n")
+      email_body += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:40px\"><b>%s</b></td>\r\n", subsection)
+      email_body += fmt.Sprintf(" </tr>\r\n")
+
+      // Loop through settings
+      for _, setting := range settings[subsection] {
+        email_body += fmt.Sprintf(" <tr>\r\n")
+        email_body += fmt.Sprintf("  <td style=\"text-indent:60px\">%-*s</td>", longest_setting_name+2, setting+":")
+
+        var setting_value interface{}
+        switch subsection {
+        case "approval_settings":
+          structure := reflect.ValueOf(m.ApprovalSettingsOriginal[name])
+          field := structure.Elem().FieldByName(strcase.ToCamel(setting))
+          if field.IsValid() {
+            setting_value = field.Interface()
+          } else {
+            setting_value = "NOT VALID SETTING"
           }
+        case "project_settings":
+          structure := reflect.ValueOf(m.ProjectSettingsOriginal[name])
+          field := structure.Elem().FieldByName(strcase.ToCamel(setting))
+          if field.IsValid() {
+            setting_value = field.Interface()
+          } else {
+            setting_value = "NOT VALID SETTING"
+          }
+        }
+
+        email_body += fmt.Sprintf("  <td style=\"text-indent:40px\">%v", setting_value)
+
+        if setting_value != m.config.Compliance.Mandatory[subsection][setting] {
+          email_body += fmt.Sprintf(" (%v)", m.config.Compliance.Mandatory[subsection][setting])
+        }
+
+        email_body += fmt.Sprintf("</td>\r\n")
+        email_body += fmt.Sprintf(" </tr>\r\n")
+      }
+    }
+
+    email_body += fmt.Sprintf("</table>\r\n")
+  }
+
+  if err := m.SendEmail(m.config.Compliance.Email.To, m.config.Compliance.Email.From, "Compliance Report", email_body); err != nil {
+    m.logger.Fatal(err)
+  }
+
+  return nil
+}
+
+// GenerateComplianceReport prints to console the compliance state of mandatory settings
+func (m *ProjectManager) GenerateComplianceReport() error {
+  if err := m.debugPrintAllSettings(); err != nil {
+    panic(err)
+  }
+
+  m.logger.Debugf("---[ Compliance Settings ]---")
+  m.logger.Debugf("%v\n", m.config.Compliance)
+
+  // Print Title
+  fmt.Printf("\nCOMPLIANCE REPORT\n")
+
+  // Create sorted list of projects
+  var project_names []string
+  for project_name := range m.ProjectSettingsOriginal {
+    // Add to list of project names to allow sorting
+    project_names = append(project_names, project_name)
+
+  }
+  sort.Strings(project_names)
+
+  // Create sorted list of subsections
+  var subsections []string
+  for subsection := range m.config.Compliance.Mandatory {
+    subsections = append(subsections, subsection)
+  }
+  sort.Strings(subsections)
+
+  // Create sorted list of settings, per subsection
+  var longest_setting_name int
+  var settings = make(map[string][]string)
+  for _, subsection := range subsections {
+    settings[subsection] = make([]string, 0)
+
+    for setting := range m.config.Compliance.Mandatory[subsection] {
+      settings[subsection] = append(settings[subsection], setting)
+      if len(setting) > longest_setting_name {
+        longest_setting_name = len(setting)
+      }
+    }
+    sort.Strings(settings[subsection])
+  }
+
+  // Loop through projects
+  for _, name := range project_names {
+    fmt.Printf("  %s\n", name)
+
+    // Loop through subsections
+    for _, subsection := range subsections {
+      fmt.Printf("    %s:\n", subsection)
+
+      // Loop through settings
+      for _, setting := range settings[subsection] {
+        fmt.Printf("      %-*s", longest_setting_name+2, setting+":")
+
+        var setting_value interface{}
+        switch subsection {
+        case "approval_settings":
+          structure := reflect.ValueOf(m.ApprovalSettingsOriginal[name])
+          field := structure.Elem().FieldByName(strcase.ToCamel(setting))
+          if field.IsValid() {
+            setting_value = field.Interface()
+          } else {
+            setting_value = "NOT VALID SETTING"
+          }
+        case "project_settings":
+          structure := reflect.ValueOf(m.ProjectSettingsOriginal[name])
+          field := structure.Elem().FieldByName(strcase.ToCamel(setting))
+          if field.IsValid() {
+            setting_value = field.Interface()
+          } else {
+            setting_value = "NOT VALID SETTING"
+          }
+        }
+
+        fmt.Printf("%v", setting_value)
+
+        if setting_value != m.config.Compliance.Mandatory[subsection][setting] {
+          fmt.Printf(" (%v)", m.config.Compliance.Mandatory[subsection][setting])
         }
 
         fmt.Printf("\n")
       }
-    } else {
-      fmt.Printf("\nNo changes discovered.\n")
     }
-  } else {
-    fmt.Printf("\nNo changes discovered.\n")
+
+    fmt.Printf("\n")
   }
 
   return nil
@@ -382,6 +572,62 @@ func (m *ProjectManager) GetSubgroupID(path string, indent int, group_ID int) (i
 func (m *ProjectManager) SetError(state bool) (bool) {
   m.config.Error = state
   return m.config.Error
+}
+
+// SendEmail
+func (m *ProjectManager) SendEmail(to []string, from string, subject string, body string) error {
+  // Connect to remote SMTP server
+  smtp_server, err := smtp.Dial(m.config.Compliance.Email.Server+":"+strconv.Itoa(m.config.Compliance.Email.Port))
+  if err != nil {
+    m.logger.Fatal(err)
+  }
+
+  // Set the sender
+  if err := smtp_server.Mail(from); err != nil {
+    m.logger.Fatal(err)
+  }
+
+  // Set the recipient
+  if err := smtp_server.Rcpt(strings.Join(to, ",")); err != nil {
+    m.logger.Fatal(err)
+  }
+
+  // Send the email body
+  smtp_writer, err := smtp_server.Data()
+  if err != nil {
+    m.logger.Fatal(err)
+  }
+
+  message := fmt.Sprintf("Content-Type: text/html; charset=UTF-8\r\n")
+  message += fmt.Sprintf("From: %s\r\n", from)
+  message += fmt.Sprintf("To: %s\r\n", strings.Join(to, ","))
+  message += fmt.Sprintf("Subject: %s\r\n", subject)
+  message += fmt.Sprintf("<html>\r\n")
+  message += fmt.Sprintf(" <head>\r\n")
+  message += fmt.Sprintf("  <title>%s</title>\r\n", subject)
+  message += fmt.Sprintf(" </head>\r\n")
+  message += fmt.Sprintf(" <body>\r\n")
+  message += fmt.Sprintf("\r\n%s\r\n", body)
+  message += fmt.Sprintf(" </body>\r\n")
+  message += fmt.Sprintf("</html>")
+
+  _, err = smtp_writer.Write([]byte(message))
+  if err != nil {
+    m.logger.Fatal(err)
+  }
+
+  err = smtp_writer.Close()
+  if err != nil {
+    m.logger.Fatal(err)
+  }
+
+  // Send the QUIT command and close the connection.
+  err = smtp_server.Quit()
+  if err != nil {
+    m.logger.Fatal(err)
+  }
+
+  return nil
 }
 
 // UpdateProjectMergeRequestSettings updates the project settings on gitlab
@@ -554,6 +800,28 @@ func (m *ProjectManager) convertEditProjectOptionsToProject(current gitlab.EditP
   }
 
   return returnValue, nil
+}
+
+// debugPrintAllSettings prints to console all capture settings
+func (m *ProjectManager) debugPrintAllSettings() error {
+  m.logger.Debugf("---[ ORIGINAL APPROVAL SETTINGS ]---")
+  if err := m.debugPrintApprovalSettings(m.ApprovalSettingsOriginal); err != nil {
+    m.logger.Debugf("Error printing Original Approval Settings")
+  }
+  m.logger.Debugf("---[ UPDATED APPROVAL SETTINGS ]---")
+  if err := m.debugPrintApprovalSettings(m.ApprovalSettingsUpdated); err != nil {
+    m.logger.Debugf("Error printing Updated Approval Settings")
+  }
+  m.logger.Debugf("---[ ORIGINAL PROJECT SETTINGS ]---")
+  if err := m.debugPrintProjectSettings(m.ProjectSettingsOriginal); err != nil {
+    m.logger.Debugf("Error printing Original Project Settings")
+  }
+  m.logger.Debugf("---[ UPDATED PROJECT SETTINGS ]---")
+  if err := m.debugPrintProjectSettings(m.ProjectSettingsUpdated); err != nil {
+    m.logger.Debugf("Error printing Updated Project Settings")
+  }
+
+  return nil
 }
 
 // debugPrintProjectSettings prints to console a SettingsMap

@@ -21,8 +21,8 @@ providing a Config object. The config object has the following fields:
 | `create_default_branch` | bool              | no       | Whether the default branch configured in `project_settings.default_branch` should be created if it doesn't exist |         |
 | `protected_branches`    | []ProtectedBranch | no       | A list of branches to protect, together with the infos which roles are allowed to merge or push.                 |         |
 | `approval_settings`     | Object            | no       | The gitlab project approval settings to change. [Possible keys](https://docs.gitlab.com/ee/api/merge_request_approvals.html#change-configuration) |         |
-| `project_settings`      | Object            | yes      | The gitlab project settings to change. [Possible keys](https://docs.gitlab.com/ce/api/projects.html#edit-project) |         |
-
+| `project_settings`      | Object            | no       | The gitlab project settings to change. [Possible keys](https://docs.gitlab.com/ce/api/projects.html#edit-project) |         |
+| `compliance`            | Object            | no       | The compliance configuration.                                                                                    |         |
 
 `ProtectedBranch` 
 
@@ -32,6 +32,11 @@ providing a Config object. The config object has the following fields:
 | `push_access_level`  | string | yes      | Which role is allowed to push (possible values: `maintainer`, `developer`, `noone`)  |
 | `merge_access_level` | string | yes      | Which role is allowed to merge (possible values: `maintainer`, `developer`, `noone`) |
 
+`Compliance`
+
+| Field                | Type   | Required | Content                                                                              |
+|----------------------|--------|----------|--------------------------------------------------------------------------------------|
+| `mandatory`          | Object | yes      | Setting names, and their values following the sync naming schema                     |
 
 ## Env vars
 
@@ -47,7 +52,7 @@ internal flags please use the following env vars:
 
 ## Config Example
 
-An example config might look like the following:
+An example SYNC config might look like the following:
 
 ```json
 {
@@ -87,6 +92,23 @@ An example config might look like the following:
     "printing_merge_request_link_enabled": true,
     "ci_config_path": null,
     "approvals_before_merge": 1
+  }
+}
+```
+
+An example COMPLIANCE config might look like the following:
+
+```json
+{
+  "compliance": {
+    "mandatory": {
+      "approval_settings": {
+        "reset_approvals_on_push": false
+      },
+      "project_settings": {
+        "resolve_outdated_diff_discussions": false
+      }
+    }
   }
 }
 ```
