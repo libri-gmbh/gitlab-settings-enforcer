@@ -37,7 +37,7 @@ jobs:
       - deploy:
           name: build and push docker images
           command: |
-            export DOCKER_REPO=$(echo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" | awk '{print tolower($0)}')
+            export DOCKER_REPO=$(echo "${DOCKER_REPO_OWNER}/${CIRCLE_PROJECT_REPONAME}" | awk '{print tolower($0)}')
             docker build -t ${DOCKER_REPO} .
 
             [ "${CIRCLE_BRANCH}" != "master" ] && [ -z "${CIRCLE_TAG}" ] && exit 0
