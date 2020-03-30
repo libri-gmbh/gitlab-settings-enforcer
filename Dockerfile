@@ -3,7 +3,7 @@ WORKDIR /go/src/github.com/libri-gmbh/gitlab-settings-enforcer/
 
 RUN export CGO_ENABLED=0 && \
     go get && \
-    go build -a -ldflags '-s' -installsuffix cgo -o bin/kube-vault .
+    go build -a -ldflags '-s' -installsuffix cgo -o bin/gitlab-settings-enforcer .
 
 
 FROM alpine:latest
