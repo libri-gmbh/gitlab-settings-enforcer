@@ -91,7 +91,8 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 		}
 
 		// Remove protections (if present)
-		if resp, err := m.protectedBranchesClient.UnprotectRepositoryBranches(project.ID, b.Name); err != nil && (resp == nil || resp.StatusCode != http.StatusNotFound) {
+		if resp, err := m.protectedBranchesClient.UnprotectRepositoryBranches(project.ID, b.Name); err != nil &&
+			(resp == nil || resp.StatusCode != http.StatusNotFound) {
 			return fmt.Errorf("failed to unprotect branch %v before protection: %v", b.Name, err)
 		}
 
@@ -260,76 +261,76 @@ func (m *ProjectManager) GenerateComplianceEmail() error {
 	sort.Strings(subsections)
 
 	// Create sorted list of settings, per subsection
-	var longest_setting_name int
+	var longestSettingName int
 	var settings = make(map[string][]string)
 	for _, subsection := range subsections {
 		settings[subsection] = make([]string, 0)
 
 		for setting := range m.config.Compliance.Mandatory[subsection] {
 			settings[subsection] = append(settings[subsection], setting)
-			if len(setting) > longest_setting_name {
-				longest_setting_name = len(setting)
+			if len(setting) > longestSettingName {
+				longestSettingName = len(setting)
 			}
 		}
 		sort.Strings(settings[subsection])
 	}
 
 	// Print Title
-	email_body := fmt.Sprintf("\r\n<h2>Compliance Report</h2>\r\n")
-	email_body += fmt.Sprintf("<table>\r\n")
+	emailBody := "\r\n<h2>Compliance Report</h2>\r\n"
+	emailBody += "<table>\r\n"
 
 	// Loop through projects
 	for _, name := range project_names {
-		email_body += fmt.Sprintf(" <tr>\r\n")
-		email_body += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:20px\"><b>%s</b></td>\r\n", name)
-		email_body += fmt.Sprintf(" </tr>\r\n")
+		emailBody += " <tr>\r\n"
+		emailBody += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:20px\"><b>%s</b></td>\r\n", name)
+		emailBody += " </tr>\r\n"
 
 		// Loop through subsections
 		for _, subsection := range subsections {
-			email_body += fmt.Sprintf(" <tr>\r\n")
-			email_body += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:40px\"><b>%s</b></td>\r\n", subsection)
-			email_body += fmt.Sprintf(" </tr>\r\n")
+			emailBody += " <tr>\r\n"
+			emailBody += fmt.Sprintf("  <td colspan=\"2\" style=\"text-indent:40px\"><b>%s</b></td>\r\n", subsection)
+			emailBody += " </tr>\r\n"
 
 			// Loop through settings
 			for _, setting := range settings[subsection] {
-				email_body += fmt.Sprintf(" <tr>\r\n")
-				email_body += fmt.Sprintf("  <td style=\"text-indent:60px\">%-*s</td>", longest_setting_name+2, setting+":")
+				emailBody += " <tr>\r\n"
+				emailBody += fmt.Sprintf("  <td style=\"text-indent:60px\">%-*s</td>", longestSettingName+2, setting+":")
 
-				var setting_value interface{}
+				var settingValue interface{}
 				switch subsection {
 				case "approval_settings":
 					structure := reflect.ValueOf(m.ApprovalSettingsOriginal[name])
 					field := structure.Elem().FieldByName(strcase.ToCamel(setting))
 					if field.IsValid() {
-						setting_value = field.Interface()
+						settingValue = field.Interface()
 					} else {
-						setting_value = "NOT VALID SETTING"
+						settingValue = "NOT VALID SETTING"
 					}
 				case "project_settings":
 					structure := reflect.ValueOf(m.ProjectSettingsOriginal[name])
 					field := structure.Elem().FieldByName(strcase.ToCamel(setting))
 					if field.IsValid() {
-						setting_value = field.Interface()
+						settingValue = field.Interface()
 					} else {
-						setting_value = "NOT VALID SETTING"
+						settingValue = "NOT VALID SETTING"
 					}
 				}
 
-				email_body += fmt.Sprintf("  <td style=\"text-indent:40px\">%v", setting_value)
+				emailBody += fmt.Sprintf("  <td style=\"text-indent:40px\">%v", settingValue)
 
-				if setting_value != m.config.Compliance.Mandatory[subsection][setting] {
-					email_body += fmt.Sprintf(" (%v)", m.config.Compliance.Mandatory[subsection][setting])
+				if settingValue != m.config.Compliance.Mandatory[subsection][setting] {
+					emailBody += fmt.Sprintf(" (%v)", m.config.Compliance.Mandatory[subsection][setting])
 				}
 
-				email_body += fmt.Sprintf("</td>\r\n")
-				email_body += fmt.Sprintf(" </tr>\r\n")
+				emailBody += "</td>\r\n"
+				emailBody += "</tr>\r\n"
 			}
 		}
 
-		email_body += fmt.Sprintf("</table>\r\n")
+		emailBody += "</table>\r\n"
 	}
 
-	if err := m.SendEmail(m.config.Compliance.Email.To, m.config.Compliance.Email.From, "Compliance Report", email_body); err != nil {
+	if err := m.SendEmail(m.config.Compliance.Email.To, m.config.Compliance.Email.From, "Compliance Report", emailBody); err != nil {
 		m.logger.Fatal(err)
 	}
 
@@ -349,13 +350,13 @@ func (m *ProjectManager) GenerateComplianceReport() error {
 	fmt.Printf("\nCOMPLIANCE REPORT\n")
 
 	// Create sorted list of projects
-	var project_names []string
-	for project_name := range m.ProjectSettingsOriginal {
+	var projectNames []string
+	for projectName := range m.ProjectSettingsOriginal {
 		// Add to list of project names to allow sorting
-		project_names = append(project_names, project_name)
+		projectNames = append(projectNames, projectName)
 
 	}
-	sort.Strings(project_names)
+	sort.Strings(projectNames)
 
 	// Create sorted list of subsections
 	var subsections []string
@@ -365,22 +366,22 @@ func (m *ProjectManager) GenerateComplianceReport() error {
 	sort.Strings(subsections)
 
 	// Create sorted list of settings, per subsection
-	var longest_setting_name int
+	var longestSettingName int
 	var settings = make(map[string][]string)
 	for _, subsection := range subsections {
 		settings[subsection] = make([]string, 0)
 
 		for setting := range m.config.Compliance.Mandatory[subsection] {
 			settings[subsection] = append(settings[subsection], setting)
-			if len(setting) > longest_setting_name {
-				longest_setting_name = len(setting)
+			if len(setting) > longestSettingName {
+				longestSettingName = len(setting)
 			}
 		}
 		sort.Strings(settings[subsection])
 	}
 
 	// Loop through projects
-	for _, name := range project_names {
+	for _, name := range projectNames {
 		fmt.Printf("  %s\n", name)
 
 		// Loop through subsections
@@ -389,31 +390,31 @@ func (m *ProjectManager) GenerateComplianceReport() error {
 
 			// Loop through settings
 			for _, setting := range settings[subsection] {
-				fmt.Printf("      %-*s", longest_setting_name+2, setting+":")
+				fmt.Printf("      %-*s", longestSettingName+2, setting+":")
 
-				var setting_value interface{}
+				var settingValue interface{}
 				switch subsection {
 				case "approval_settings":
 					structure := reflect.ValueOf(m.ApprovalSettingsOriginal[name])
 					field := structure.Elem().FieldByName(strcase.ToCamel(setting))
 					if field.IsValid() {
-						setting_value = field.Interface()
+						settingValue = field.Interface()
 					} else {
-						setting_value = "NOT VALID SETTING"
+						settingValue = "NOT VALID SETTING"
 					}
 				case "project_settings":
 					structure := reflect.ValueOf(m.ProjectSettingsOriginal[name])
 					field := structure.Elem().FieldByName(strcase.ToCamel(setting))
 					if field.IsValid() {
-						setting_value = field.Interface()
+						settingValue = field.Interface()
 					} else {
-						setting_value = "NOT VALID SETTING"
+						settingValue = "NOT VALID SETTING"
 					}
 				}
 
-				fmt.Printf("%v", setting_value)
+				fmt.Printf("%v", settingValue)
 
-				if setting_value != m.config.Compliance.Mandatory[subsection][setting] {
+				if settingValue != m.config.Compliance.Mandatory[subsection][setting] {
 					fmt.Printf(" (%v)", m.config.Compliance.Mandatory[subsection][setting])
 				}
 
@@ -431,7 +432,7 @@ func (m *ProjectManager) GenerateComplianceReport() error {
 func (m *ProjectManager) GetProjectApprovalSettings(project gitlab.Project) (*gitlab.ProjectApprovals, error) {
 	m.logger.Debugf("Get merge request approval settings of project %s ...", project.PathWithNamespace)
 
-	returned_approval, response, err := m.projectsClient.GetApprovalConfiguration(project.ID)
+	returnedApproval, response, err := m.projectsClient.GetApprovalConfiguration(project.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current approval settings of project %s: %v", project.PathWithNamespace, err)
 	}
@@ -439,9 +440,9 @@ func (m *ProjectManager) GetProjectApprovalSettings(project gitlab.Project) (*gi
 	m.logger.Debugf("---[ HTTP Response for GetProjectApprovalSettings ]---\n")
 	m.logger.Debugf("%v\n", response)
 	m.logger.Debugf("---[ Returned MR for GetProjectApprovalSettings ]---\n")
-	m.logger.Debugf("%v\n", returned_approval)
+	m.logger.Debugf("%v\n", returnedApproval)
 
-	return returned_approval, nil
+	return returnedApproval, nil
 }
 
 // GetProjects fetches a list of accessible repos within the groups set in config file
@@ -463,10 +464,10 @@ func (m *ProjectManager) GetProjects() ([]gitlab.Project, error) {
 		groupID = group_ID
 	} else {
 		// BugFix: Without this pre-processing, go-gitlab library stalls.
-		var group_name string = strings.Replace(url.PathEscape(m.config.GroupName), ".", "%2E", -1)
-		group, _, err := m.groupsClient.GetGroup(group_name)
+		var groupName = strings.Replace(url.PathEscape(m.config.GroupName), ".", "%2E", -1)
+		group, _, err := m.groupsClient.GetGroup(groupName)
 		if err != nil {
-			return []gitlab.Project{}, fmt.Errorf("failed to fetch GitLab group info for %q: %v", group_name, err)
+			return []gitlab.Project{}, fmt.Errorf("failed to fetch GitLab group info for %q: %v", groupName, err)
 		}
 		groupID = group.ID
 	}
@@ -513,7 +514,7 @@ func (m *ProjectManager) GetProjects() ([]gitlab.Project, error) {
 func (m *ProjectManager) GetProjectSettings(project gitlab.Project) (*gitlab.Project, error) {
 	m.logger.Debugf("Get project settings of project %s ...", project.PathWithNamespace)
 
-	returned_project, response, err := m.projectsClient.GetProject(project.ID, &gitlab.GetProjectOptions{})
+	returnedProject, response, err := m.projectsClient.GetProject(project.ID, &gitlab.GetProjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current project settings of project %s: %v", project.PathWithNamespace, err)
 	}
@@ -521,9 +522,9 @@ func (m *ProjectManager) GetProjectSettings(project gitlab.Project) (*gitlab.Pro
 	m.logger.Debugf("---[ HTTP Response ]---\n")
 	m.logger.Debugf("%v\n", response)
 	m.logger.Debugf("---[ Returned Project ]---\n")
-	m.logger.Debugf("%v\n", returned_project)
+	m.logger.Debugf("%v\n", returnedProject)
 
-	return returned_project, nil
+	return returnedProject, nil
 }
 
 // GetSubgroupID walks the provided path, returning the Group ID of the last desired subgroup.
@@ -531,8 +532,8 @@ func (m *ProjectManager) GetSubgroupID(path string, indent int, group_ID int) (i
 	var subgroup_ID int
 
 	subpath := strings.Split(path, "/")[indent]
-	path_count := len(strings.Split(path, "/")) - 1
-	m.logger.Debugf("Walking %s, looking for %s[%d/%d].", path, subpath, indent, path_count)
+	pathCount := len(strings.Split(path, "/")) - 1
+	m.logger.Debugf("Walking %s, looking for %s[%d/%d].", path, subpath, indent, pathCount)
 
 	var group_info string
 	if group_ID == 0 {
@@ -559,7 +560,7 @@ func (m *ProjectManager) GetSubgroupID(path string, indent int, group_ID int) (i
 		}
 	}
 
-	if indent != path_count {
+	if indent != pathCount {
 		m.logger.Debugf("Found Group ID %d, going deeper.", subgroup_ID)
 		subgroup_ID, _ = m.GetSubgroupID(path, indent+1, subgroup_ID)
 	}
@@ -577,39 +578,39 @@ func (m *ProjectManager) SetError(state bool) bool {
 // SendEmail
 func (m *ProjectManager) SendEmail(to []string, from string, subject string, body string) error {
 	// Connect to remote SMTP server
-	smtp_server, err := smtp.Dial(m.config.Compliance.Email.Server + ":" + strconv.Itoa(m.config.Compliance.Email.Port))
+	smtpServer, err := smtp.Dial(m.config.Compliance.Email.Server + ":" + strconv.Itoa(m.config.Compliance.Email.Port))
 	if err != nil {
 		m.logger.Fatal(err)
 	}
 
 	// Set the sender
-	if err := smtp_server.Mail(from); err != nil {
+	if err := smtpServer.Mail(from); err != nil {
 		m.logger.Fatal(err)
 	}
 
 	// Set the recipient
-	if err := smtp_server.Rcpt(strings.Join(to, ",")); err != nil {
+	if err := smtpServer.Rcpt(strings.Join(to, ",")); err != nil {
 		m.logger.Fatal(err)
 	}
 
 	// Send the email body
-	smtp_writer, err := smtp_server.Data()
+	smtp_writer, err := smtpServer.Data()
 	if err != nil {
 		m.logger.Fatal(err)
 	}
 
-	message := fmt.Sprintf("Content-Type: text/html; charset=UTF-8\r\n")
+	message := "Content-Type: text/html; charset=UTF-8\r\n"
 	message += fmt.Sprintf("From: %s\r\n", from)
 	message += fmt.Sprintf("To: %s\r\n", strings.Join(to, ","))
 	message += fmt.Sprintf("Subject: %s\r\n", subject)
-	message += fmt.Sprintf("<html>\r\n")
-	message += fmt.Sprintf(" <head>\r\n")
+	message += "<html>\r\n"
+	message += " <head>\r\n"
 	message += fmt.Sprintf("  <title>%s</title>\r\n", subject)
-	message += fmt.Sprintf(" </head>\r\n")
-	message += fmt.Sprintf(" <body>\r\n")
+	message += " </head>\r\n"
+	message += " <body>\r\n"
 	message += fmt.Sprintf("\r\n%s\r\n", body)
-	message += fmt.Sprintf(" </body>\r\n")
-	message += fmt.Sprintf("</html>")
+	message += " </body>\r\n"
+	message += "</html>"
 
 	_, err = smtp_writer.Write([]byte(message))
 	if err != nil {
@@ -622,7 +623,7 @@ func (m *ProjectManager) SendEmail(to []string, from string, subject string, bod
 	}
 
 	// Send the QUIT command and close the connection.
-	err = smtp_server.Quit()
+	err = smtpServer.Quit()
 	if err != nil {
 		m.logger.Fatal(err)
 	}
@@ -771,7 +772,8 @@ func (m *ProjectManager) UpdateProjectSettings(project gitlab.Project, dryrun bo
  **********************/
 
 // convertChangeApprovalConfigurationOptionsToProjectApprovals
-func (m *ProjectManager) convertChangeApprovalConfigurationOptionsToProjectApprovals(current gitlab.ChangeApprovalConfigurationOptions) (gitlab.ProjectApprovals, error) {
+func (m *ProjectManager) convertChangeApprovalConfigurationOptionsToProjectApprovals(current gitlab.ChangeApprovalConfigurationOptions) (gitlab.
+	ProjectApprovals, error) {
 	jsonData, err := json.Marshal(current)
 	if err != nil {
 		return gitlab.ProjectApprovals{}, fmt.Errorf("failed to convert ChangeApprovalConfigurationOptions to json: %v", err)

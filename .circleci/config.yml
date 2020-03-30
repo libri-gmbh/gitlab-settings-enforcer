@@ -15,11 +15,16 @@ jobs:
           name: run tests
           command: go test -v ./...
 
+  lint:
+    docker:
+      - image: golangci/golangci-lint:v1.24.0
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
+
+    steps:
+      - checkout
       - run:
           name: Golang CI Lint
-          command: |
-            wget -O- -nv https://github.com/golangci/golangci-lint/releases/download/v1.21.0/golangci-lint-1.21.0-linux-amd64.tar.gz | tar -xvzO golangci-lint-1.21.0-linux-amd64/golangci-lint > golangci-lint && chmod +x golangci-lint
-            ./golangci-lint
+          command: golangci-lint run -v
 
   build:
     docker:
@@ -53,8 +58,10 @@ workflows:
   build:
     jobs:
       - test
+      - lint
       - build:
           requires:
+            - lint
             - test
           context: docker
           filters:
