@@ -1,6 +1,7 @@
 FROM golang:1-alpine as builder
 WORKDIR /go/src/github.com/libri-gmbh/gitlab-settings-enforcer/
 
+COPY . ./
 RUN export CGO_ENABLED=0 && \
     go get && \
     go build -a -ldflags '-s' -installsuffix cgo -o bin/gitlab-settings-enforcer .
