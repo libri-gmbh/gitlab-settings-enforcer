@@ -2,6 +2,7 @@
 //
 // Copyright (c) 2019 Scalify GmbH
 // Copyright (c) 2019 Eric Rinker
+// Copyright (c) 2020 Libri GmbH
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,8 @@
 
 package main
 
-import "github.com/erinkerNCS/gitlab-settings-enforcer/cmd"
+import "github.com/libri-gmbh/gitlab-settings-enforcer/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }

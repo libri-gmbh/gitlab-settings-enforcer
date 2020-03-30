@@ -1,36 +1,30 @@
-version: 2
+version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
+      - image: circleci/golang:1.14
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
 
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-
       - run:
           name: install dependencies
-          command: |
-            curl https://glide.sh/get | sh
-            glide install --strip-vendor
+          command: go mod download
 
       - run:
           name: run tests
           command: go test -v ./...
 
       - run:
-          name: gometalinter
+          name: Golang CI Lint
           command: |
-            go get github.com/alecthomas/gometalinter
-            gometalinter -i
-            gometalinter --deadline=5m --vendor --skip=proto --sort=severity ./...
+            wget -O- -nv https://github.com/golangci/golangci-lint/releases/download/v1.21.0/golangci-lint-1.21.0-linux-amd64.tar.gz | tar -xvzO golangci-lint-1.21.0-linux-amd64/golangci-lint > golangci-lint && chmod +x golangci-lint
+            ./golangci-lint
 
   build:
     docker:
-      - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
+      - image: circleci/golang:1.14
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
 
     steps:
       - checkout
