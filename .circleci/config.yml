@@ -1,41 +1,38 @@
-version: 2
+version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
+      - image: circleci/golang:1.14
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
 
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-
       - run:
           name: install dependencies
-          command: |
-            curl https://glide.sh/get | sh
-            glide install --strip-vendor
+          command: go mod download
 
       - run:
           name: run tests
           command: go test -v ./...
 
-      - run:
-          name: gometalinter
-          command: |
-            go get github.com/alecthomas/gometalinter
-            gometalinter -i
-            gometalinter --deadline=5m --vendor --skip=proto --sort=severity ./...
-
-  build:
+  lint:
     docker:
-      - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/erinkerNCS/gitlab-settings-enforcer
+      - image: golangci/golangci-lint:v1.24.0
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
 
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - run:
+          name: Golang CI Lint
+          command: golangci-lint run -v
+
+  build:
+    docker:
+      - image: circleci/golang:1.14
+    working_directory: /go/src/github.com/libri-gmbh/gitlab-settings-enforcer
+
+    steps:
+      - checkout
 
       - deploy:
           name: push docker images
@@ -61,8 +58,10 @@ workflows:
   build:
     jobs:
       - test
+      - lint
       - build:
           requires:
+            - lint
             - test
           context: docker
           filters:
