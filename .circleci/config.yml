@@ -57,8 +57,18 @@ workflows:
   version: 2
   build:
     jobs:
-      - test
-      - lint
+      - test:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: /.*/
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: /.*/
       - build:
           requires:
             - lint
