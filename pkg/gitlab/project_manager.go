@@ -856,6 +856,7 @@ func (m *ProjectManager) debugPrintProjectSettings(settings map[string]*gitlab.P
 }
 
 func (m *ProjectManager) ensureDefaultBranch(project gitlab.Project, dryrun bool) error {
+
 	if !m.config.CreateDefaultBranch ||
 		m.config.ProjectSettings.DefaultBranch == nil ||
 		*m.config.ProjectSettings.DefaultBranch == "master" {
@@ -899,7 +900,7 @@ func (m *ProjectManager) willChangeApprovalSettings(current *gitlab.ProjectAppro
 	changelog, _ := diff.Diff(current, changes)
 
 	changeExpected := false
-	fmt.Printf("%v\n", changelog)
+	m.logger.Debugf("%v", changelog)
 
 	for _, change := range changelog {
 		if change.Type == "update" {
@@ -915,7 +916,7 @@ func (m *ProjectManager) willChangeProjectSettings(current *gitlab.Project, chan
 	changelog, _ := diff.Diff(current, changes)
 
 	changeExpected := false
-	fmt.Printf("%v\n", changelog)
+	m.logger.Debugf("%v", changelog)
 
 	for _, change := range changelog {
 		if change.Type == "update" {
