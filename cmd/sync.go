@@ -19,7 +19,7 @@ var syncCmd = &cobra.Command{
 			}
 		}
 		if env.Dryrun {
-			logger.Infof("DRYRUN: No changes will be implemented.")
+			logger.Infof("DRYRUN: No settings will be updated.")
 		}
 
 		manager := gl.NewProjectManager(
