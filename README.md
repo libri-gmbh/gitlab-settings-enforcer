@@ -5,7 +5,27 @@ the GitLab API(s).
 
 # Usage
 
-T.B.D.
+This project get's built automatically and is usable as a docker image at hub.docker.com: [`libri/gitlab-settings-enforcer`](https://hub.docker.com/r/libri/gitlab-settings-enforcer)
+
+Create a configuration file config.json and run with `project-settings-enforcer sync`
+
+To support multiple configuration files you can use this script:
+
+```shell script
+#!/bin/bash
+
+set -ex
+
+for file in configs/*; do
+    if [[ ! -f $file ]]; then
+      # skip non-files
+      continue
+    fi
+
+    CONFIG_FILE="${file}" ./project-settings-enforcer sync
+
+done
+```
 
 # Configuration
 
@@ -32,11 +52,22 @@ providing a Config object. The config object has the following fields:
 | `push_access_level`  | string | yes      | Which role is allowed to push (possible values: `maintainer`, `developer`, `noone`)  |
 | `merge_access_level` | string | yes      | Which role is allowed to merge (possible values: `maintainer`, `developer`, `noone`) |
 
-`Compliance`
+`Compliance` (Config for the Complience Report, run with `project-settings-enforcer complience`)
 
 | Field                | Type   | Required | Content                                                                              |
 |----------------------|--------|----------|--------------------------------------------------------------------------------------|
 | `mandatory`          | Object | yes      | Setting names, and their values following the sync naming schema                     |
+| `email`              | Object | no       | Email setting to send the complience Report                                                  |
+
+`Email`
+
+| Field                | Type     | Required | Content                                                                              |
+|----------------------|----------|----------|--------------------------------------------------------------------------------------|
+| `From`               | string   | yes      | From address                                                                         |
+| `Server`             | string   | yes      | Smtpserver hostname                                                                  |
+| `Port`               | int      | yes      | Smtpserver port                                                                      |
+| `To`                 | []string | yes      | Recepients                                                                           |
+
 
 ## Env vars
 
@@ -48,7 +79,7 @@ internal flags please use the following env vars:
 | `GITLAB_ENDPOINT` | no       | Only override when using GitLab on premise, set this to your GitLab Server Domain | (gitlab.com) |
 | `GITLAB_TOKEN`    | yes      | The GitLab API token used for authentication                                      |              |
 | `VERBOSE`         | no       | Enables debug logging when enabled                                                | `false`      |
-
+| `DRYRUN`          | no       | Only output the changes without setting them on gitlab                            | `false`      |
 
 ## Config Example
 
@@ -119,3 +150,4 @@ An example COMPLIANCE config might look like the following:
     
     Copyright (c) 2019 Scalify GmbH
     Copyright (c) 2019 Eric Rinker
+    Copyright (c) 2020 Libri GmbH

@@ -237,6 +237,11 @@ func (m *ProjectManager) GenerateChangeLogReport() error {
 
 // GenerateComplianceEmail emails the compliance state of mandatory settings
 func (m *ProjectManager) GenerateComplianceEmail() error {
+	if m.config.Compliance.Email.From == "" || m.config.Compliance.Email.Server == "" || m.config.Compliance.Email.Port == 0 {
+		m.logger.Debugf("---[ Skipping Compliance Settings as From, Server or Port is not set ]---")
+		return nil
+	}
+
 	if err := m.debugPrintAllSettings(); err != nil {
 		panic(err)
 	}
