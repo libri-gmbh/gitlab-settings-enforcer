@@ -481,7 +481,7 @@ func (m *ProjectManager) GetProjects() ([]gitlab.Project, error) {
 
 	// Get Project objects
 	for {
-		projects, resp, err := m.groupsClient.ListGroupProjects(groupID, listGroupProjectOps, addIncludeSubgroups)
+		projects, resp, err := m.groupsClient.ListGroupProjects(groupID, listGroupProjectOps)
 		if err != nil {
 			return []gitlab.Project{}, fmt.Errorf("failed to fetch GitLab projects for %s [%d]: %v", m.config.GroupName, groupID, err)
 		}

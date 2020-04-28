@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xanzy/go-gitlab"
 
 	gl "github.com/libri-gmbh/gitlab-settings-enforcer/pkg/gitlab"
 )
@@ -12,12 +11,11 @@ var complianceCmd = &cobra.Command{
 	Use:   "compliance",
 	Short: "Compare gitlab's project settings with desired state",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := gitlab.NewClient(nil, env.GitlabToken)
-		if env.GitlabEndpoint != "" {
-			if err := client.SetBaseURL(env.GitlabEndpoint); err != nil {
-				logger.Fatal(err)
-			}
+		client, err := gitlabClient()
+		if err != nil {
+			logger.Fatal(err)
 		}
+
 		if env.Dryrun {
 			logger.Infof("DRYRUN: No settings will be updated.")
 		}
