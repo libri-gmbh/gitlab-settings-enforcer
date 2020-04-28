@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/xanzy/go-gitlab"
-
 	gl "github.com/libri-gmbh/gitlab-settings-enforcer/pkg/gitlab"
+	"github.com/spf13/cobra"
 )
 
 // syncCmd represents the sync command
@@ -12,12 +10,7 @@ var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Sync gitlab's project settings with the config",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := gitlab.NewClient(nil, env.GitlabToken)
-		if env.GitlabEndpoint != "" {
-			if err := client.SetBaseURL(env.GitlabEndpoint); err != nil {
-				logger.Fatal(err)
-			}
-		}
+		client, err := gitlabClient()
 		if env.Dryrun {
 			logger.Infof("DRYRUN: No settings will be updated.")
 		}
