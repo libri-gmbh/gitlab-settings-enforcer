@@ -11,6 +11,10 @@ var syncCmd = &cobra.Command{
 	Short: "Sync gitlab's project settings with the config",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := gitlabClient()
+		if err != nil {
+			logger.Fatal(err)
+		}
+
 		if env.Dryrun {
 			logger.Infof("DRYRUN: No settings will be updated.")
 		}
