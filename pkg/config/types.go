@@ -27,6 +27,7 @@ type Config struct {
 	ProjectBlacklist    []string          `json:"project_blacklist"`
 	ProjectWhitelist    []string          `json:"project_whitelist"`
 	ProtectedBranches   []ProtectedBranch `json:"protected_branches"`
+	ProtectedTags       []ProtectedTag    `json:"protected_tags"`
 
 	ApprovalSettings *gitlab.ChangeApprovalConfigurationOptions `json:"approval_settings"`
 	ProjectSettings  *gitlab.EditProjectOptions                 `json:"project_settings"`
@@ -52,6 +53,12 @@ type ProtectedBranch struct {
 	Name             string      `json:"name"`
 	PushAccessLevel  AccessLevel `json:"push_access_level"`
 	MergeAccessLevel AccessLevel `json:"merge_access_level"`
+}
+
+// ProtectedTag defines who can create a protected tag
+type ProtectedTag struct {
+	Name              string      `json:"name"`
+	CreateAccessLevel AccessLevel `json:"create_access_level"`
 }
 
 // AccessLevel wraps the numeric gitlab access level into a readable string
