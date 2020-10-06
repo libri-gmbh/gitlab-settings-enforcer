@@ -98,8 +98,8 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 			m.logger.Warnf("failed to get protected branch %v: %v", b.Name, err)
 		} else {
 			if protectedBranch != nil &&
-				len(protectedBranch.MergeAccessLevels) == 1 && protectedBranch.MergeAccessLevels[0].AccessLevel == *b.MergeAccessLevel.Value() &&
-				len(protectedBranch.PushAccessLevels) == 1 && protectedBranch.PushAccessLevels[0].AccessLevel == *b.PushAccessLevel.Value() {
+				compareAccessLevels(protectedBranch.MergeAccessLevels, b.MergeAccessLevel) &&
+				compareAccessLevels(protectedBranch.PushAccessLevels, b.PushAccessLevel) {
 				continue
 			}
 		}
@@ -123,6 +123,10 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 	}
 
 	return nil
+}
+
+func compareAccessLevels(branchLevel []*gitlab.BranchAccessDescription, configLevel config.AccessLevel) bool {
+	return len(branchLevel) == 1 && branchLevel[0].AccessLevel == *configLevel.Value()
 }
 
 func (m *ProjectManager) EnsureTagsProtection(project gitlab.Project, dryrun bool) error {
