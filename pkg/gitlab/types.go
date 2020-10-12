@@ -28,6 +28,14 @@ type protectedBranchesClient interface {
 	ProtectRepositoryBranches(pid interface{}, opt *gitlab.ProtectRepositoryBranchesOptions, options ...gitlab.RequestOptionFunc) (*gitlab.ProtectedBranch,
 		*gitlab.Response, error)
 	UnprotectRepositoryBranches(pid interface{}, branch string, options ...gitlab.RequestOptionFunc) (*gitlab.Response, error)
+	GetProtectedBranch(pid interface{}, branch string, options ...gitlab.RequestOptionFunc) (*gitlab.ProtectedBranch, *gitlab.Response, error)
+}
+
+type protectedTagsClient interface {
+	ProtectRepositoryTags(pid interface{}, opt *gitlab.ProtectRepositoryTagsOptions, options ...gitlab.RequestOptionFunc) (*gitlab.ProtectedTag,
+		*gitlab.Response, error)
+	UnprotectRepositoryTags(pid interface{}, tag string, options ...gitlab.RequestOptionFunc) (*gitlab.Response, error)
+	GetProtectedTag(pid interface{}, tag string, options ...gitlab.RequestOptionFunc) (*gitlab.ProtectedTag, *gitlab.Response, error)
 }
 
 type branchesClient interface {

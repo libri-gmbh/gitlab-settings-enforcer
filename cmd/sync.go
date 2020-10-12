@@ -24,6 +24,7 @@ var syncCmd = &cobra.Command{
 			client.Groups,
 			client.Projects,
 			client.ProtectedBranches,
+			client.ProtectedTags,
 			client.Branches,
 			cfg,
 		)

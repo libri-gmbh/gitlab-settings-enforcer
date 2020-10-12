@@ -27,6 +27,7 @@ type ProjectManager struct {
 	groupsClient             groupsClient
 	projectsClient           projectsClient
 	protectedBranchesClient  protectedBranchesClient
+	protectedTagsClient      protectedTagsClient
 	branchesClient           branchesClient
 	config                   *config.Config
 	ApprovalSettingsOriginal map[string]*gitlab.ProjectApprovals
@@ -41,6 +42,7 @@ func NewProjectManager(
 	groupsClient groupsClient,
 	projectsClient projectsClient,
 	protectedBranchesClient protectedBranchesClient,
+	protectedTagsClient protectedTagsClient,
 	branchesClient branchesClient,
 	config *config.Config,
 ) *ProjectManager {
@@ -49,6 +51,7 @@ func NewProjectManager(
 		groupsClient:             groupsClient,
 		projectsClient:           projectsClient,
 		protectedBranchesClient:  protectedBranchesClient,
+		protectedTagsClient:      protectedTagsClient,
 		branchesClient:           branchesClient,
 		config:                   config,
 		ApprovalSettingsOriginal: make(map[string]*gitlab.ProjectApprovals),
@@ -90,6 +93,17 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 			continue
 		}
 
+		protectedBranch, _, err := m.protectedBranchesClient.GetProtectedBranch(project.ID, b.Name)
+		if err != nil {
+			m.logger.Warnf("failed to get protected branch %v: %v", b.Name, err)
+		} else {
+			if protectedBranch != nil &&
+				compareAccessLevels(protectedBranch.MergeAccessLevels, b.MergeAccessLevel) &&
+				compareAccessLevels(protectedBranch.PushAccessLevels, b.PushAccessLevel) {
+				continue
+			}
+		}
+
 		// Remove protections (if present)
 		if resp, err := m.protectedBranchesClient.UnprotectRepositoryBranches(project.ID, b.Name); err != nil &&
 			(resp == nil || resp.StatusCode != http.StatusNotFound) {
@@ -105,6 +119,48 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 		// (Re)add protections
 		if _, _, err := m.protectedBranchesClient.ProtectRepositoryBranches(project.ID, opt); err != nil {
 			return fmt.Errorf("failed to protect branch %s: %v", b.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func compareAccessLevels(branchLevel []*gitlab.BranchAccessDescription, configLevel config.AccessLevel) bool {
+	return len(branchLevel) == 1 && branchLevel[0].AccessLevel == *configLevel.Value()
+}
+
+func (m *ProjectManager) EnsureTagsProtection(project gitlab.Project, dryrun bool) error {
+	for _, t := range m.config.ProtectedTags {
+		if dryrun {
+			m.logger.Infof("DRYRUN: Skipped executing API call [UnprotectRepositoryTags] on %v branch.", t.Name)
+			m.logger.Infof("DRYRUN: Skipped executing API call [ProtectRepositoryTags] on %v branch.", t.Name)
+			continue
+		}
+
+		protectedTag, _, err := m.protectedTagsClient.GetProtectedTag(project.ID, t.Name)
+		if err != nil {
+			m.logger.Warnf("failed to get protected tag %v: %v", t.Name, err)
+		} else {
+			if protectedTag != nil &&
+				len(protectedTag.CreateAccessLevels) == 1 && protectedTag.CreateAccessLevels[0].AccessLevel == *t.CreateAccessLevel.Value() {
+				continue
+			}
+		}
+
+		// Remove protections (if present)
+		if resp, err := m.protectedTagsClient.UnprotectRepositoryTags(project.ID, t.Name); err != nil &&
+			(resp == nil || resp.StatusCode != http.StatusNotFound) {
+			return fmt.Errorf("failed to unprotect branch %v before protection: %v", t.Name, err)
+		}
+
+		opt := &gitlab.ProtectRepositoryTagsOptions{
+			Name:              gitlab.String(t.Name),
+			CreateAccessLevel: t.CreateAccessLevel.Value(),
+		}
+
+		// (Re)add protections
+		if _, _, err := m.protectedTagsClient.ProtectRepositoryTags(project.ID, opt); err != nil {
+			return fmt.Errorf("failed to protect branch %s: %v", t.Name, err)
 		}
 	}
 
