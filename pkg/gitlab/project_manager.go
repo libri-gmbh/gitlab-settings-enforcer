@@ -87,12 +87,6 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 	}
 
 	for _, b := range m.config.ProtectedBranches {
-		if dryrun {
-			m.logger.Infof("DRYRUN: Skipped executing API call [UnprotectRepositoryBranches] on %v branch.", b.Name)
-			m.logger.Infof("DRYRUN: Skipped executing API call [ProtectRepositoryBranches] on %v branch.", b.Name)
-			continue
-		}
-
 		protectedBranch, _, err := m.protectedBranchesClient.GetProtectedBranch(project.ID, b.Name)
 		if err != nil {
 			m.logger.Warnf("failed to get protected branch %v: %v", b.Name, err)
@@ -102,6 +96,12 @@ func (m *ProjectManager) EnsureBranchesAndProtection(project gitlab.Project, dry
 				compareAccessLevels(protectedBranch.PushAccessLevels, b.PushAccessLevel) {
 				continue
 			}
+		}
+
+		if dryrun {
+			m.logger.Infof("DRYRUN: Skipped executing API call [UnprotectRepositoryBranches] on %v branch.", b.Name)
+			m.logger.Infof("DRYRUN: Skipped executing API call [ProtectRepositoryBranches] on %v branch.", b.Name)
+			continue
 		}
 
 		// Remove protections (if present)
@@ -131,12 +131,6 @@ func compareAccessLevels(branchLevel []*gitlab.BranchAccessDescription, configLe
 
 func (m *ProjectManager) EnsureTagsProtection(project gitlab.Project, dryrun bool) error {
 	for _, t := range m.config.ProtectedTags {
-		if dryrun {
-			m.logger.Infof("DRYRUN: Skipped executing API call [UnprotectRepositoryTags] on %v branch.", t.Name)
-			m.logger.Infof("DRYRUN: Skipped executing API call [ProtectRepositoryTags] on %v branch.", t.Name)
-			continue
-		}
-
 		protectedTag, _, err := m.protectedTagsClient.GetProtectedTag(project.ID, t.Name)
 		if err != nil {
 			m.logger.Warnf("failed to get protected tag %v: %v", t.Name, err)
@@ -145,6 +139,12 @@ func (m *ProjectManager) EnsureTagsProtection(project gitlab.Project, dryrun boo
 				len(protectedTag.CreateAccessLevels) == 1 && protectedTag.CreateAccessLevels[0].AccessLevel == *t.CreateAccessLevel.Value() {
 				continue
 			}
+		}
+
+		if dryrun {
+			m.logger.Infof("DRYRUN: Skipped executing API call [UnprotectRepositoryTags] on %v tag.", t.Name)
+			m.logger.Infof("DRYRUN: Skipped executing API call [ProtectRepositoryTags] on %v tag.", t.Name)
+			continue
 		}
 
 		// Remove protections (if present)

@@ -44,6 +44,12 @@ var syncCmd = &cobra.Command{
 				manager.SetError(true)
 			}
 
+			// Update tags
+			if err := manager.EnsureTagsProtection(project, env.Dryrun); err != nil {
+				logger.Errorf("failed to ensure tags of repo %v: %v", project.PathWithNamespace, err)
+				manager.SetError(true)
+			}
+
 			// Update general settings
 			if err := manager.UpdateProjectSettings(project, env.Dryrun); err != nil {
 				logger.Errorf("failed to update project settings of repo %v: %v", project.PathWithNamespace, err)
