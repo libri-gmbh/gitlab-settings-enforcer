@@ -22,6 +22,7 @@ var (
 // settings documented at https://godoc.org/github.com/xanzy/go-gitlab#CreateProjectOptions
 type Config struct {
 	GroupName           string `json:"group_name"`
+	IncludeSubgroups    bool   `json:"include_subgroups"`
 	CreateDefaultBranch bool   `json:"create_default_branch"`
 	Error               bool
 	ProjectBlacklist    []string          `json:"project_blacklist"`
