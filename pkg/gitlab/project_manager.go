@@ -534,6 +534,7 @@ func (m *ProjectManager) GetProjects() ([]gitlab.Project, error) {
 	}
 
 	m.logger.Debugf("GroupID is %d", groupID)
+	listGroupProjectOps.IncludeSubgroups = gitlab.Bool(m.config.IncludeSubgroups)
 
 	// Get Project objects
 	for {

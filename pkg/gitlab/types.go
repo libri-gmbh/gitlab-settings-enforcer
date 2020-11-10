@@ -48,8 +48,7 @@ var (
 		ListOptions: gitlab.ListOptions{
 			PerPage: 100,
 		},
-		IncludeSubgroups: gitlab.Bool(true),
-		Archived:         gitlab.Bool(false),
+		Archived: gitlab.Bool(false),
 	}
 
 	listSubgroupOps = &gitlab.ListSubgroupsOptions{
